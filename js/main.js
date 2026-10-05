@@ -516,3 +516,47 @@ $('target').addEventListener('input', syncFromKB);
 $('useTarget').addEventListener('change', updateLabels);
 document.querySelectorAll('[data-kb]').forEach((b) => b.addEventListener('click', syncFromKB));
 syncFromKB();
+
+/* ---------- PWA install ---------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((registration) => {
+        console.log('Pixara service worker registered:', registration.scope);
+      })
+      .catch((error) => {
+        console.error('Service worker registration failed:', error);
+      });
+  });
+}
+
+let deferredPrompt = null;
+const installPill = document.getElementById('installPill');
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  deferredPrompt = event;
+  installPill?.classList.add('show');
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  installPill?.classList.remove('show');
+});
+
+installPill?.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    console.log('Install result:', result.outcome);
+    deferredPrompt = null;
+    installPill.classList.remove('show');
+    return;
+  }
+
+  alert(
+    'To install Pixara Converter:\\n\\n' +
+    'Chrome: click the install icon in the address bar, or open ⋮ > Cast, save and share > Install page as app.\\n\\n' +
+    'Edge: open ⋯ > Apps > Install Pixara Converter.'
+  );
+});
